@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PlacementPrep">
+<title>Grace's Placement Tracker</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0f;
+  --bg2: #111118;
+  --bg3: #1a1a24;
+  --bg4: #22222e;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: #f0f0f5;
+  --text2: #9090a8;
+  --text3: #5a5a72;
+  --teal: #0dcfcd;
+  --teal-dim: #0B6E6D;
+  --teal-bg: rgba(13,207,205,0.08);
+  --teal-bg2: rgba(13,207,205,0.14);
+  --amber: #f0a500;
+  --amber-bg: rgba(240,165,0,0.1);
+  --blue: #5b9cf6;
+  --blue-bg: rgba(91,156,246,0.1);
+  --coral: #ff6b6b;
+  --coral-bg: rgba(255,107,107,0.1);
+  --purple: #a78bfa;
+  --purple-bg: rgba(167,139,250,0.1);
+  --green: #4ade80;
+  --green-bg: rgba(74,222,128,0.1);
+  --radius: 10px;
+  --radius-lg: 14px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bot: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%; background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 15px; line-height: 1.5; overflow: hidden;
+}
+
+/* ── LAYOUT ── */
+#app { display: flex; flex-direction: column; height: 100%; }
+
+#header {
+  padding: calc(var(--safe-top) + 14px) 18px 14px;
+  background: var(--bg); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+}
+.header-icon {
+  width: 34px; height: 34px; border-radius: 9px;
+  background: var(--teal-bg2); display: flex; align-items: center; justify-content: center;
+  border: 1px solid rgba(13,207,205,0.2);
+}
+.header-icon svg { width: 18px; height: 18px; }
+.header-title { font-size: 16px; font-weight: 600; color: var(--text); flex: 1; }
+.header-sub { font-size: 12px; color: var(--text3); font-family: 'DM Mono', monospace; }
+
+#install-btn {
+  background: var(--teal-bg2); color: var(--teal); border: 1px solid rgba(13,207,205,0.25);
+  border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 500; cursor: pointer;
+  display: none; font-family: 'DM Sans', sans-serif;
+}
+#install-btn.visible { display: block; }
+
+/* ── TABS ── */
+#tabs {
+  display: flex; background: var(--bg); border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.tab {
+  flex: 1; padding: 12px 8px; text-align: center; font-size: 13px; font-weight: 500;
+  color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent;
+  transition: all 0.15s; user-select: none;
+}
+.tab.active { color: var(--teal); border-bottom-color: var(--teal); }
+.tab:hover:not(.active) { color: var(--text2); }
+
+/* ── SCROLL AREA ── */
+#content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.page { display: none; padding: 16px; padding-bottom: calc(var(--safe-bot) + 20px); }
+.page.active { display: block; }
+
+/* ── STATS ROW ── */
+.stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 16px; }
+.stat {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 10px 8px; text-align: center;
+}
+.stat-val { font-size: 22px; font-weight: 600; color: var(--teal); font-family: 'DM Mono', monospace; }
+.stat-lbl { font-size: 10px; color: var(--text3); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* ── PROGRESS BAR ── */
+.prog-wrap { height: 4px; background: var(--bg3); border-radius: 99px; overflow: hidden; margin: 8px 0 4px; }
+.prog-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--teal-dim), var(--teal)); transition: width 0.4s ease; }
+
+/* ── LEET TRACKER ── */
+.lc-card {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: 14px 16px; margin-bottom: 16px;
+}
+.lc-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.lc-label { font-size: 13px; color: var(--text2); }
+.lc-count { font-size: 20px; font-weight: 600; font-family: 'DM Mono', monospace; color: var(--teal); }
+.lc-target { font-size: 11px; color: var(--text3); }
+input[type=range] {
+  width: 100%; accent-color: var(--teal); cursor: pointer;
+  height: 20px; background: transparent;
+}
+
+/* ── SECTION LABEL ── */
+.sec-label {
+  font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase;
+  letter-spacing: 0.08em; padding: 14px 0 8px; display: flex; align-items: center; gap: 8px;
+}
+.sec-label::after { content:''; flex:1; height:1px; background:var(--border); }
+
+/* ── PHASE HEADER ── */
+.phase-hdr {
+  display: flex; align-items: center; gap: 10px; padding: 11px 14px;
+  background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  cursor: pointer; margin-bottom: 6px; user-select: none; transition: background 0.15s;
+}
+.phase-hdr:hover { background: var(--bg3); }
+.phase-hdr.open { border-color: var(--border2); }
+
+.phase-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+
+.phase-info { flex: 1; min-width: 0; }
+.phase-name { font-size: 13px; font-weight: 500; color: var(--text); }
+.phase-date { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; margin-top: 1px; }
+
+.phase-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.phase-pct { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text2); }
+.chevron { font-size: 10px; color: var(--text3); transition: transform 0.2s; display: inline-block; }
+.chevron.open { transform: rotate(90deg); }
+
+.phase-body { display: none; margin-bottom: 10px; }
+.phase-body.open { display: block; }
+
+/* ── WEEK BLOCK ── */
+.week-lbl {
+  font-size: 10px; font-weight: 500; color: var(--text3); text-transform: uppercase;
+  letter-spacing: 0.06em; padding: 10px 4px 6px;
+  border-bottom: 1px solid var(--border); margin-bottom: 4px;
+}
+
+/* ── TASK ROW ── */
+.task {
+  display: flex; align-items: flex-start; gap: 10px; padding: 9px 8px;
+  border-radius: 8px; cursor: pointer; transition: background 0.1s;
+}
+.task:hover { background: var(--bg3); }
+.task.done .task-txt { text-decoration: line-through; color: var(--text3); }
+
+.chk {
+  width: 18px; height: 18px; border-radius: 5px; flex-shrink: 0; margin-top: 1px;
+  border: 1.5px solid var(--border2); background: transparent;
+  display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+}
+.chk.on { background: var(--teal-dim); border-color: var(--teal-dim); }
+.chk.on::after {
+  content: ''; display: block; width: 9px; height: 5px;
+  border-left: 2px solid #fff; border-bottom: 2px solid #fff;
+  transform: rotate(-45deg) translateY(-1px);
+}
+
+.task-txt { font-size: 13px; color: var(--text); line-height: 1.5; flex: 1; }
+.tag {
+  font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 99px;
+  display: inline-block; margin-left: 4px; vertical-align: middle; flex-shrink: 0;
+}
+.tag-dsa { background: var(--teal-bg); color: var(--teal); }
+.tag-proj { background: var(--blue-bg); color: var(--blue); }
+.tag-career { background: var(--amber-bg); color: var(--amber); }
+.tag-sql { background: var(--purple-bg); color: var(--purple); }
+.tag-prep { background: var(--coral-bg); color: var(--coral); }
+
+/* ── DSA TOPIC CARD ── */
+.topic-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); margin-bottom: 8px; overflow: hidden;
+}
+.topic-hdr {
+  display: flex; align-items: center; gap: 10px; padding: 12px 14px;
+  cursor: pointer; transition: background 0.15s; user-select: none;
+}
+.topic-hdr:hover { background: var(--bg3); }
+
+.topic-num {
+  width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 600; font-family: 'DM Mono', monospace;
+}
+
+.topic-info { flex: 1; min-width: 0; }
+.topic-name { font-size: 13px; font-weight: 500; color: var(--text); }
+.topic-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+.topic-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+.diff-badge {
+  font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 99px;
+}
+.d-easy { background: var(--teal-bg); color: var(--teal); }
+.d-med  { background: var(--amber-bg); color: var(--amber); }
+.d-hard { background: var(--coral-bg); color: var(--coral); }
+
+.status-btn {
+  font-size: 10px; font-weight: 600; padding: 3px 9px; border-radius: 99px;
+  border: 1px solid var(--border2); background: transparent; color: var(--text3);
+  cursor: pointer; font-family: 'DM Sans', sans-serif; white-space: nowrap;
+}
+.status-btn.learning { background: var(--amber-bg); color: var(--amber); border-color: rgba(240,165,0,0.3); }
+.status-btn.done     { background: var(--teal-bg); color: var(--teal); border-color: rgba(13,207,205,0.3); }
+
+.prob-count { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; }
+
+.topic-body { display: none; border-top: 1px solid var(--border); }
+.topic-body.open { display: block; }
+
+.topic-inner { padding: 14px; }
+.body-lbl {
+  font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase;
+  letter-spacing: 0.07em; margin-bottom: 8px;
+}
+
+.concept-list { list-style: none; margin-bottom: 14px; }
+.concept-list li {
+  font-size: 12px; color: var(--text2); padding: 4px 0;
+  border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 7px;
+}
+.concept-list li:last-child { border-bottom: none; }
+.concept-list li::before { content: '›'; color: var(--teal); font-size: 14px; flex-shrink: 0; }
+
+.prob-list { list-style: none; margin-bottom: 14px; }
+.prob-row {
+  display: flex; align-items: center; gap: 8px; padding: 6px 0;
+  border-bottom: 1px solid var(--border); cursor: pointer; transition: opacity 0.1s;
+}
+.prob-row:last-child { border-bottom: none; }
+.prob-row:hover { opacity: 0.8; }
+.prob-chk {
+  width: 15px; height: 15px; border-radius: 4px; flex-shrink: 0;
+  border: 1.5px solid var(--border2); background: transparent;
+  display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+}
+.prob-chk.on { background: var(--teal-dim); border-color: var(--teal-dim); }
+.prob-chk.on::after {
+  content: ''; display: block; width: 7px; height: 4px;
+  border-left: 1.5px solid #fff; border-bottom: 1.5px solid #fff;
+  transform: rotate(-45deg) translateY(-1px);
+}
+.prob-name { font-size: 12px; color: var(--text); flex: 1; }
+.prob-name.done { text-decoration: line-through; color: var(--text3); }
+.prob-d {
+  font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 99px;
+}
+.prob-e { background: var(--teal-bg); color: var(--teal); }
+.prob-m { background: var(--amber-bg); color: var(--amber); }
+.prob-h { background: var(--coral-bg); color: var(--coral); }
+
+.note-box {
+  background: var(--teal-bg); border-left: 3px solid var(--teal-dim);
+  border-radius: 0 8px 8px 0; padding: 10px 12px;
+  font-size: 12px; color: var(--text2); line-height: 1.6;
+}
+
+/* ── PHASE DIVIDER ── */
+.dsa-phase-label {
+  font-size: 10px; font-weight: 600; color: var(--teal); text-transform: uppercase;
+  letter-spacing: 0.08em; padding: 14px 4px 8px; display: flex; align-items: center; gap: 8px;
+}
+.dsa-phase-label::after { content:''; flex:1; height:1px; background: rgba(13,207,205,0.2); }
+
+/* ── INSTALL TOAST ── */
+#toast {
+  position: fixed; bottom: calc(var(--safe-bot) + 16px); left: 50%; transform: translateX(-50%) translateY(80px);
+  background: var(--bg3); border: 1px solid var(--border2); border-radius: 12px;
+  padding: 12px 20px; font-size: 13px; color: var(--text); white-space: nowrap;
+  transition: transform 0.3s ease; z-index: 100; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+#toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ── SCROLLBAR ── */
+#content::-webkit-scrollbar { width: 4px; }
+#content::-webkit-scrollbar-track { background: transparent; }
+#content::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="header">
+    <div class="header-icon">
+      <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="2" width="2.5" height="14" rx="1.25" fill="#0dcfcd"/>
+        <rect x="6" y="4" width="10" height="3" rx="1.5" fill="#0dcfcd" opacity="0.8"/>
+        <rect x="6" y="9" width="7" height="2.5" rx="1.25" fill="#0dcfcd" opacity="0.5"/>
+        <rect x="6" y="13" width="9" height="2.5" rx="1.25" fill="#0dcfcd" opacity="0.35"/>
+      </svg>
+    </div>
+    <div>
+      <div class="header-title">Placement Prep</div>
+      <div class="header-sub" id="headerSub">loading...</div>
+    </div>
+    <button id="install-btn" onclick="installPWA()">+ Install</button>
+  </div>
+
+  <div id="tabs">
+    <div class="tab active" onclick="switchTab('roadmap')">📋 Roadmap</div>
+    <div class="tab" onclick="switchTab('dsa')">🧠 DSA Topics</div>
+  </div>
+
+  <div id="content">
+    <div class="page active" id="page-roadmap"></div>
+    <div class="page" id="page-dsa"></div>
+  </div>
+
+</div>
+<div id="toast"></div>
+
+<script>
+const S = {
+  get: k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+};
+
+let state = S.get('grace_v2') || {};
+function save() { S.set('grace_v2', state); }
+
+// ── DATA ──────────────────────────────────────────────────────────────────
+
+const PHASES = [
+  {
+    id: 'p1', name: 'Phase 1 — Exams', dates: 'Now → Mar 31', color: '#f0a500',
+    weeks: [
+      { label: 'Daily habit (30–40 min)', tasks: [
+        { id: 't1', text: '1 Easy LeetCode problem — arrays / strings / hashmaps only', tag: 'dsa' },
+        { id: 't2', text: 'Review one concept you got wrong yesterday', tag: 'dsa' },
+      ]},
+      { label: 'Every 2–3 days', tasks: [
+        { id: 't3', text: 'Note down one weak DSA topic (build a list)', tag: 'dsa' },
+      ]},
+      { label: 'Before March 31', tasks: [
+        { id: 't4', text: 'Reach 100 LeetCode problems solved', tag: 'dsa' },
+        { id: 't5', text: 'Confirm backlog exam dates and register', tag: 'career' },
+      ]},
+    ]
+  },
+  {
+    id: 'p2', name: 'Phase 2 — Build & Intern', dates: 'Apr 1 → Apr 30', color: '#5b9cf6',
+    weeks: [
+      { label: 'Week 1–2: Deploy hostel project (top priority)', tasks: [
+        { id: 't6', text: 'Deploy on Render / Railway / Vercel (free tier)', tag: 'proj' },
+        { id: 't7', text: 'Write README with live link, tech stack, screenshots', tag: 'proj' },
+        { id: 't8', text: 'Push clean code to a public GitHub repo', tag: 'proj' },
+        { id: 't9', text: 'Add deployed project to resume with live URL', tag: 'career' },
+      ]},
+      { label: 'Week 1–4: Daily DSA (1 hr evenings)', tasks: [
+        { id: 't10', text: '2 Medium problems/day — sliding window & two pointers', tag: 'dsa' },
+        { id: 't11', text: '2 Medium problems/day — hashmaps & binary search', tag: 'dsa' },
+        { id: 't12', text: '2 Medium problems/day — stacks, queues, linked lists', tag: 'dsa' },
+        { id: 't13', text: '2 Medium problems/day — basic trees (BFS/DFS)', tag: 'dsa' },
+      ]},
+      { label: 'By April 30', tasks: [
+        { id: 't14', text: 'Reach 150 LeetCode problems solved', tag: 'dsa' },
+        { id: 't15', text: 'Cover NeetCode 150: arrays, two-ptr, sliding window, stack, binary search', tag: 'dsa' },
+      ]},
+    ]
+  },
+  {
+    id: 'p3', name: 'Phase 3 — Sprint Week', dates: 'May 1 → May 6', color: '#0dcfcd',
+    weeks: [
+      { label: 'May 1–2: Mock assessments', tasks: [
+        { id: 't16', text: 'Full timed OA simulation: 90 min, 2 problems (LeetCode contest mode)', tag: 'prep' },
+        { id: 't17', text: 'Second OA simulation — review mistakes thoroughly', tag: 'prep' },
+      ]},
+      { label: 'May 3: SQL day', tasks: [
+        { id: 't18', text: '15 HackerRank SQL problems: joins, group by, window functions', tag: 'sql' },
+        { id: 't19', text: 'Practice SELECT with subqueries, CTEs, aggregation', tag: 'sql' },
+      ]},
+      { label: 'May 4: Resume & profile', tasks: [
+        { id: 't20', text: 'Update resume with hostel project + April internship', tag: 'career' },
+        { id: 't21', text: 'Update LinkedIn: new project, skills, experience', tag: 'career' },
+        { id: 't22', text: 'Prepare 3 tailored resume versions (DS, SDE, general)', tag: 'career' },
+      ]},
+      { label: 'May 5–6: Applications', tasks: [
+        { id: 't23', text: 'Apply: Stripe Bangalore intern (stripe.com/jobs)', tag: 'career' },
+        { id: 't24', text: 'Apply: Microsoft DS/SDE intern (careers.microsoft.com)', tag: 'career' },
+        { id: 't25', text: 'Apply: Google STEP/SWE intern (careers.google.com)', tag: 'career' },
+        { id: 't26', text: 'Set Amazon job alert for India SDE intern 2027 batch', tag: 'career' },
+        { id: 't27', text: 'Reach 180 LeetCode problems solved', tag: 'dsa' },
+      ]},
+    ]
+  },
+  {
+    id: 'p4', name: 'Phase 4 — College Internship', dates: 'May 7 → Jun 6', color: '#9090a8',
+    weeks: [
+      { label: 'Daily (maintain momentum)', tasks: [
+        { id: 't28', text: '1 LeetCode problem per day — do not let the streak die', tag: 'dsa' },
+      ]},
+      { label: 'If OA invites arrive', tasks: [
+        { id: 't29', text: 'Block 90-min evening slots for any OA that comes in', tag: 'prep' },
+        { id: 't30', text: 'Do a quick 30-min topic review before each OA', tag: 'prep' },
+      ]},
+      { label: 'By June 6 — final checklist', tasks: [
+        { id: 't31', text: '200 LeetCode problems solved', tag: 'dsa' },
+        { id: 't32', text: 'Hostel project live and on resume', tag: 'proj' },
+        { id: 't33', text: 'SQL basics solid: joins, group by, window functions', tag: 'sql' },
+        { id: 't34', text: 'Applications submitted to 4+ target companies', tag: 'career' },
+        { id: 't35', text: 'Backlogs on track to clear by July', tag: 'career' },
+      ]},
+    ]
+  },
+];
+
+const TOPICS = [
+  {
+    id: 'arrays', phase: 'Phase 1 — Foundation (start here)',
+    num: 1, name: 'Arrays & Strings', diff: 'easy',
+    sub: 'The base of everything. Most OA problems use this.',
+    concepts: ['Indexing, iteration, slicing','Two pointers (left & right)','Sliding window (fixed & variable)','Prefix sums','String manipulation & reversal','Frequency counting with arrays'],
+    problems: [
+      {id:'pa1',name:'Two Sum',diff:'e'},{id:'pa2',name:'Best Time to Buy and Sell Stock',diff:'e'},
+      {id:'pa3',name:'Contains Duplicate',diff:'e'},{id:'pa4',name:'Maximum Subarray (Kadane\'s)',diff:'m'},
+      {id:'pa5',name:'Longest Substring Without Repeating',diff:'m'},{id:'pa6',name:'3Sum',diff:'m'},
+    ],
+    note: 'Do not move on until Two Sum, Contains Duplicate, and Best Time to Buy feel easy. These appear in almost every OA.',
+  },
+  {
+    id: 'hashmaps', phase: null, num: 2, name: 'Hashmaps & Sets', diff: 'easy',
+    sub: 'Reduces O(n²) brute force to O(n). Used everywhere.',
+    concepts: ['dict / {} in Python — key-value storage','set() — fast lookup, no duplicates','Counting frequencies (Counter)','Grouping items by key','Checking existence in O(1)','Two-pass vs one-pass hashmap patterns'],
+    problems: [
+      {id:'ph1',name:'Valid Anagram',diff:'e'},{id:'ph2',name:'Group Anagrams',diff:'m'},
+      {id:'ph3',name:'Top K Frequent Elements',diff:'m'},{id:'ph4',name:'Longest Consecutive Sequence',diff:'m'},
+      {id:'ph5',name:'Two Sum (hashmap version)',diff:'e'},{id:'ph6',name:'Ransom Note',diff:'e'},
+    ],
+    note: 'Hashmaps are the single most used data structure in product company interviews. Get very comfortable here.',
+  },
+  {
+    id: 'stack', phase: null, num: 3, name: 'Stack & Queue', diff: 'easy',
+    sub: 'LIFO / FIFO. Needed before you can do trees.',
+    concepts: ['Stack: push, pop, peek — list in Python','Queue: enqueue/dequeue — collections.deque','Monotonic stack pattern','Bracket / parenthesis matching','Next greater element pattern'],
+    problems: [
+      {id:'ps1',name:'Valid Parentheses',diff:'e'},{id:'ps2',name:'Min Stack',diff:'m'},
+      {id:'ps3',name:'Daily Temperatures',diff:'m'},{id:'ps4',name:'Evaluate Reverse Polish Notation',diff:'m'},
+      {id:'ps5',name:'Car Fleet',diff:'m'},
+    ],
+    note: 'Valid Parentheses is the most common warm-up problem in real interviews. Do it until it\'s automatic.',
+  },
+  {
+    id: 'binsearch', phase: null, num: 4, name: 'Binary Search', diff: 'easy',
+    sub: 'Cuts search space in half. O(log n) not O(n).',
+    concepts: ['Classic binary search on sorted array','left, right, mid pointer logic','Search on answer space (not just array)','Finding first/last occurrence','Off-by-one errors — most common mistake'],
+    problems: [
+      {id:'pb1',name:'Binary Search (basic)',diff:'e'},{id:'pb2',name:'Search a 2D Matrix',diff:'m'},
+      {id:'pb3',name:'Find Minimum in Rotated Sorted Array',diff:'m'},{id:'pb4',name:'Koko Eating Bananas',diff:'m'},
+      {id:'pb5',name:'Time Based Key-Value Store',diff:'m'},
+    ],
+    note: 'Learn the template once, apply it everywhere. "Search on answer space" appears in many Amazon OAs specifically.',
+  },
+  {
+    id: 'linkedlist', phase: 'Phase 2 — Core Data Structures (April week 3+)',
+    num: 5, name: 'Linked Lists', diff: 'med',
+    sub: 'Nodes pointing to nodes. Foundation for trees.',
+    concepts: ['Node class: val + next pointer','Traversal — while node is not None','Insertion at head / tail / middle','Deletion of a node','Fast & slow pointer (Floyd\'s)','Reversing a linked list (iterative)','Dummy head node trick'],
+    problems: [
+      {id:'pl1',name:'Reverse Linked List',diff:'e'},{id:'pl2',name:'Merge Two Sorted Lists',diff:'e'},
+      {id:'pl3',name:'Linked List Cycle',diff:'e'},{id:'pl4',name:'Reorder List',diff:'m'},
+      {id:'pl5',name:'Remove Nth Node From End',diff:'m'},{id:'pl6',name:'Find the Duplicate Number',diff:'m'},
+    ],
+    note: 'Write the Node class from scratch 3 times until it feels natural. Reverse Linked List appears in roughly 1 in 4 technical screens.',
+  },
+  {
+    id: 'recursion', phase: null, num: 6, name: 'Recursion & Backtracking', diff: 'med',
+    sub: 'A function calling itself. Required for trees and graphs.',
+    concepts: ['Base case + recursive case structure','Call stack mental model — draw it out','Memoization (caching results)','Backtracking: try → recurse → undo','Generating subsets and permutations'],
+    problems: [
+      {id:'pr1',name:'Climbing Stairs',diff:'e'},{id:'pr2',name:'Fibonacci (recursive + memo)',diff:'e'},
+      {id:'pr3',name:'Subsets',diff:'m'},{id:'pr4',name:'Permutations',diff:'m'},
+      {id:'pr5',name:'Combination Sum',diff:'m'},{id:'pr6',name:'Word Search',diff:'m'},
+    ],
+    note: 'Draw the recursion tree on paper for every problem. If you can\'t draw it, you don\'t understand it yet.',
+  },
+  {
+    id: 'trees', phase: 'Phase 3 — Trees & Graphs (late April / May)',
+    num: 7, name: 'Binary Trees', diff: 'med',
+    sub: 'Linked list nodes with two children. Very commonly asked.',
+    concepts: ['TreeNode class: val + left + right','Inorder/Preorder/Postorder traversal','BFS (level-order) using a queue','DFS (recursive) — the main pattern','Height, depth, diameter of a tree','Lowest Common Ancestor'],
+    problems: [
+      {id:'pt1',name:'Invert Binary Tree',diff:'e'},{id:'pt2',name:'Maximum Depth of Binary Tree',diff:'e'},
+      {id:'pt3',name:'Diameter of Binary Tree',diff:'e'},{id:'pt4',name:'Level Order Traversal (BFS)',diff:'m'},
+      {id:'pt5',name:'Validate Binary Search Tree',diff:'m'},{id:'pt6',name:'Lowest Common Ancestor of BST',diff:'m'},
+    ],
+    note: 'Trees are the most common topic at product companies. Almost every tree problem is DFS in disguise.',
+  },
+  {
+    id: 'heaps', phase: null, num: 8, name: 'Heaps / Priority Queue', diff: 'med',
+    sub: 'Always gives you min or max in O(log n).',
+    concepts: ['Min-heap vs max-heap','heapq module in Python','heappush, heappop','Top K pattern — most common use case','Max-heap trick: push negative values'],
+    problems: [
+      {id:'phe1',name:'Kth Largest Element in Array',diff:'m'},{id:'phe2',name:'Top K Frequent Elements (heap)',diff:'m'},
+      {id:'phe3',name:'K Closest Points to Origin',diff:'m'},{id:'phe4',name:'Find Median from Data Stream',diff:'h'},
+    ],
+    note: 'Short to learn but high value. Top K problems appear constantly in Amazon and Microsoft OAs.',
+  },
+  {
+    id: 'graphs', phase: null, num: 9, name: 'Graphs', diff: 'hard',
+    sub: 'Nodes connected by edges. Trees are a special case.',
+    concepts: ['Adjacency list representation','BFS on graph (shortest path)','DFS on graph (visited set required)','Connected components','Cycle detection','Grid as graph — up/down/left/right'],
+    problems: [
+      {id:'pg1',name:'Number of Islands',diff:'m'},{id:'pg2',name:'Clone Graph',diff:'m'},
+      {id:'pg3',name:'Max Area of Island',diff:'m'},{id:'pg4',name:'Course Schedule (cycle detection)',diff:'m'},
+      {id:'pg5',name:'Rotting Oranges (BFS)',diff:'m'},{id:'pg6',name:'Pacific Atlantic Water Flow',diff:'m'},
+    ],
+    note: 'Number of Islands is the most common graph problem in product company screens. Do it first, do it multiple times.',
+  },
+  {
+    id: 'dp', phase: 'Phase 4 — Only if time permits (May+)',
+    num: 10, name: 'Dynamic Programming (1D only)', diff: 'hard',
+    sub: 'Only cover 1D DP. Skip 2D DP for now.',
+    concepts: ['1D DP: bottom-up tabulation','Identifying overlapping subproblems','Climbing Stairs pattern','House Robber pattern','Coin Change pattern'],
+    problems: [
+      {id:'pd1',name:'Climbing Stairs',diff:'e'},{id:'pd2',name:'House Robber',diff:'m'},
+      {id:'pd3',name:'Coin Change',diff:'m'},{id:'pd4',name:'Longest Increasing Subsequence',diff:'m'},
+    ],
+    note: 'Do not start DP until you are comfortable with recursion and memoization. DP is recursion + caching — in that order.',
+  },
+];
+
+const TAG_MAP = { dsa:'tag-dsa', proj:'tag-proj', career:'tag-career', sql:'tag-sql', prep:'tag-prep' };
+const TAG_NAMES = { dsa:'DSA', proj:'Project', career:'Career', sql:'SQL', prep:'Mock prep' };
+
+// ── RENDER ROADMAP ────────────────────────────────────────────────────────
+function renderRoadmap() {
+  const lc = state.lc || 69;
+  let totalT = 0, doneT = 0;
+  PHASES.forEach(p => p.weeks.forEach(w => {
+    w.tasks.forEach(t => { totalT++; if (state[t.id]) doneT++; });
+  }));
+
+  let html = `
+    <div class="stats-grid">
+      <div class="stat"><div class="stat-val">${doneT}</div><div class="stat-lbl">Done</div></div>
+      <div class="stat"><div class="stat-val">${totalT}</div><div class="stat-lbl">Total</div></div>
+      <div class="stat"><div class="stat-val">${Math.round(doneT/totalT*100)}%</div><div class="stat-lbl">Progress</div></div>
+      <div class="stat"><div class="stat-val">${lc}</div><div class="stat-lbl">LeetCode</div></div>
+    </div>
+
+    <div class="lc-card">
+      <div class="lc-top">
+        <div>
+          <div class="lc-label">LeetCode problems solved</div>
+          <div class="lc-target">${Math.max(0, 200-lc)} remaining to hit target of 200</div>
+        </div>
+        <div class="lc-count">${lc}<span style="font-size:13px;color:var(--text3)">/200</span></div>
+      </div>
+      <input type="range" min="0" max="250" step="1" value="${lc}" oninput="updateLC(this.value)">
+      <div class="prog-wrap"><div class="prog-fill" style="width:${Math.min(100,Math.round(lc/200*100))}%" id="lcBar"></div></div>
+    </div>
+
+    <div class="sec-label">Phases</div>
+  `;
+
+  PHASES.forEach(p => {
+    const tasks = p.weeks.flatMap(w => w.tasks);
+    const done = tasks.filter(t => state[t.id]).length;
+    const pct = Math.round(done/tasks.length*100);
+    const open = !!state['open_'+p.id];
+
+    html += `
+      <div class="phase-hdr ${open?'open':''}" onclick="togglePhase('${p.id}')">
+        <div class="phase-dot" style="background:${p.color}"></div>
+        <div class="phase-info">
+          <div class="phase-name">${p.name}</div>
+          <div class="phase-date">${p.dates}</div>
+        </div>
+        <div class="phase-right">
+          <span class="phase-pct">${done}/${tasks.length}</span>
+          <span class="chevron ${open?'open':''}">▶</span>
+        </div>
+      </div>
+      <div class="prog-wrap" style="margin: -2px 0 6px; border-radius:0 0 6px 6px; height:3px;">
+        <div class="prog-fill" style="width:${pct}%"></div>
+      </div>
+      <div class="phase-body ${open?'open':''}">
+    `;
+
+    p.weeks.forEach(w => {
+      html += `<div class="week-lbl">${w.label}</div>`;
+      w.tasks.forEach(t => {
+        const done = !!state[t.id];
+        html += `
+          <div class="task ${done?'done':''}" onclick="toggleTask('${t.id}')">
+            <div class="chk ${done?'on':''}"></div>
+            <div class="task-txt">${t.text}<span class="tag ${TAG_MAP[t.tag]}">${TAG_NAMES[t.tag]}</span></div>
+          </div>
+        `;
+      });
+    });
+
+    html += `</div>`;
+  });
+
+  document.getElementById('page-roadmap').innerHTML = html;
+  updateHeaderSub();
+}
+
+// ── RENDER DSA ────────────────────────────────────────────────────────────
+function renderDSA() {
+  let totalT = TOPICS.length, doneT = 0, learningT = 0, probsDone = 0;
+  TOPICS.forEach(t => {
+    const s = state['s_'+t.id] || 'todo';
+    if (s === 'done') doneT++;
+    if (s === 'learning') learningT++;
+    t.problems.forEach(p => { if (state['p_'+p.id]) probsDone++; });
+  });
+
+  let html = `
+    <div class="stats-grid">
+      <div class="stat"><div class="stat-val">${totalT}</div><div class="stat-lbl">Topics</div></div>
+      <div class="stat"><div class="stat-val">${doneT}</div><div class="stat-lbl">Done</div></div>
+      <div class="stat"><div class="stat-val">${learningT}</div><div class="stat-lbl">Active</div></div>
+      <div class="stat"><div class="stat-val">${probsDone}</div><div class="stat-lbl">Problems</div></div>
+    </div>
+  `;
+
+  const numStyle = (diff) => {
+    if (diff==='easy') return 'background:var(--teal-bg);color:var(--teal)';
+    if (diff==='med')  return 'background:var(--amber-bg);color:var(--amber)';
+    return 'background:var(--coral-bg);color:var(--coral)';
+  };
+
+  TOPICS.forEach(t => {
+    if (t.phase) html += `<div class="dsa-phase-label">${t.phase}</div>`;
+    const status = state['s_'+t.id] || 'todo';
+    const open = !!state['o_'+t.id];
+    const probDone = t.problems.filter(p => state['p_'+p.id]).length;
+    const statusLabel = status === 'todo' ? 'Not started' : status === 'learning' ? 'In progress' : 'Done';
+    const diffLabel = t.diff === 'easy' ? 'Beginner' : t.diff === 'med' ? 'Intermediate' : 'Advanced';
+
+    html += `
+      <div class="topic-card">
+        <div class="topic-hdr" onclick="toggleTopic('${t.id}')">
+          <div class="topic-num" style="${numStyle(t.diff)}">${t.num}</div>
+          <div class="topic-info">
+            <div class="topic-name">${t.name}</div>
+            <div class="topic-sub">${t.sub}</div>
+          </div>
+          <div class="topic-right">
+            <span class="diff-badge d-${t.diff}">${diffLabel}</span>
+            <button class="status-btn ${status}" onclick="event.stopPropagation();cycleStatus('${t.id}')">${statusLabel}</button>
+            <span class="prob-count">${probDone}/${t.problems.length}</span>
+            <span class="chevron ${open?'open':''}">▶</span>
+          </div>
+        </div>
+        <div class="topic-body ${open?'open':''}">
+          <div class="topic-inner">
+            <div class="body-lbl">Concepts to learn</div>
+            <ul class="concept-list">
+              ${t.concepts.map(c=>`<li>${c}</li>`).join('')}
+            </ul>
+            <div class="body-lbl">Practice problems (NeetCode 150)</div>
+            <ul class="prob-list">
+              ${t.problems.map(p=>{
+                const done = !!state['p_'+p.id];
+                return `<li class="prob-row" onclick="toggleProb('${p.id}')">
+                  <div class="prob-chk ${done?'on':''}"></div>
+                  <span class="prob-name ${done?'done':''}">${p.name}</span>
+                  <span class="prob-d prob-${p.diff}">${p.diff==='e'?'Easy':p.diff==='m'?'Medium':'Hard'}</span>
+                </li>`;
+              }).join('')}
+            </ul>
+            <div class="note-box">${t.note}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  document.getElementById('page-dsa').innerHTML = html;
+}
+
+// ── ACTIONS ───────────────────────────────────────────────────────────────
+function toggleTask(id) { state[id] = !state[id]; save(); renderRoadmap(); }
+function togglePhase(id) { state['open_'+id] = !state['open_'+id]; save(); renderRoadmap(); }
+function toggleTopic(id) { state['o_'+id] = !state['o_'+id]; save(); renderDSA(); }
+function toggleProb(id) { state['p_'+id] = !state['p_'+id]; save(); renderDSA(); }
+function cycleStatus(id) {
+  const cur = state['s_'+id] || 'todo';
+  state['s_'+id] = cur==='todo'?'learning':cur==='learning'?'done':'todo';
+  save(); renderDSA();
+}
+function updateLC(val) {
+  state.lc = parseInt(val);
+  save();
+  const bar = document.getElementById('lcBar');
+  if (bar) bar.style.width = Math.min(100, Math.round(state.lc/200*100))+'%';
+  renderRoadmap();
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((el,i) => {
+    el.classList.toggle('active', (i===0&&tab==='roadmap')||(i===1&&tab==='dsa'));
+  });
+  document.getElementById('page-roadmap').classList.toggle('active', tab==='roadmap');
+  document.getElementById('page-dsa').classList.toggle('active', tab==='dsa');
+}
+
+function updateHeaderSub() {
+  const lc = state.lc || 69;
+  let done = 0, total = 0;
+  PHASES.forEach(p => p.weeks.forEach(w => w.tasks.forEach(t => { total++; if(state[t.id]) done++; })));
+  document.getElementById('headerSub').textContent = `${done}/${total} tasks · ${lc} LC`;
+}
+
+// ── PWA INSTALL ───────────────────────────────────────────────────────────
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault(); deferredPrompt = e;
+  document.getElementById('install-btn').classList.add('visible');
+});
+function installPWA() {
+  if (!deferredPrompt) { showToast('Open in browser to install'); return; }
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(() => {
+    deferredPrompt = null;
+    document.getElementById('install-btn').classList.remove('visible');
+  });
+}
+window.addEventListener('appinstalled', () => showToast('App installed!'));
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── SERVICE WORKER ────────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+renderRoadmap();
+renderDSA();
+</script>
+</body>
+</html>
